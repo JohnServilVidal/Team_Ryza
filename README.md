@@ -1,1 +1,1 @@
-# Team_Ryza
+Scrum Master Vidal John Servil V.
