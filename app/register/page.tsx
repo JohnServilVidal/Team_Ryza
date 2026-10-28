@@ -27,7 +27,7 @@ export default function RegisterPage() {
     setError(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Hindi magkatugma ang password at confirm password.');
+      setError('The password and confirm password do not match.');
       return;
     }
 
@@ -49,7 +49,7 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Nagkaroon ng mali sa registration.');
+        throw new Error(data.error || 'There was an error in the registration.');
       }
 
       setMessage(data.message);
@@ -82,7 +82,7 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Pangalan</label>
+            <label className="block text-sm font-medium text-gray-700">Name</label>
             <input
               type="text"
               name="name"
@@ -120,7 +120,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Ulitin ang Password</label>
+            <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
             <input
               type="password"
               name="confirmPassword"
@@ -136,14 +136,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200"
           >
-            {loading ? 'Ipinapadala...' : 'Mag-register'}
+            {loading ? 'Sending...' : 'Register'}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-gray-600">
-          May account ka na?{' '}
+          Do you already have an account?{' '}
           <Link href="/" className="text-blue-600 hover:underline">
-            Mag-login dito
+            Log in here
           </Link>
         </p>
       </div>

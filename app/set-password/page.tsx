@@ -18,7 +18,7 @@ function SetPasswordForm() {
     setError('');
 
     if (newPassword !== confirmPassword) {
-      setError('Hindi magkatugma ang mga password.');
+      setError('The passwords do not match.');
       return;
     }
 
@@ -34,15 +34,15 @@ function SetPasswordForm() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'May naganap na error.');
+        setError(data.error || 'An error occurred.');
         setLoading(false);
         return;
       }
 
-      alert('Password successfully set! Pwede ka nang mag-login gamit ang bagong password.');
+      alert('Password successfully set! You can now log in using your new password.');
       router.push('/login');
     } catch (err) {
-      setError('Hindi makakonekta sa server.');
+      setError('Failed to connect to the server.');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ function SetPasswordForm() {
             disabled={loading}
             className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition duration-200 font-semibold"
           >
-            {loading ? 'Sine-save...' : 'I-save ang Password'}
+            {loading ? 'Saving...' : 'Save Password'}
           </button>
         </form>
       </div>
