@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     // 1. Validation ng input
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Kailangan ang email at password.' }, 
+        { error: 'Email address and password are required.' }, 
         { status: 400 }
       );
     }
@@ -27,15 +27,13 @@ export async function POST(request: Request) {
 
     const user = users[0];
 
-    // 3. Suriin kung blocked ang user
     if (user.status === 'blocked') {
       return NextResponse.json(
-        { error: 'Ang account na ito ay naka-block. Hindi maaaring mag-sign in.' }, 
+        { error: 'The account is blocked. You cannot sign in.' }, 
         { status: 403 }
       );
     }
 
-    // 4. Suriin kung pending pa ang status
     if (user.status === 'pending') {
       return NextResponse.json(
         { error: 'Your account is currently pending and has not yet been approved.' }, 
@@ -43,16 +41,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. I-verify ang password gamit ang bcrypt
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
       return NextResponse.json(
-        { error: 'Mali ang email o password.' }, 
+        { error: 'Invalid email or password.' }, 
         { status: 401 }
       );
     }
 
-    // 6. Ibalik ang response kasama ang impormasyon kung kailangan ng set-password sa first login
     return NextResponse.json(
       {
         message: 'Login successful!',
@@ -70,7 +66,7 @@ export async function POST(request: Request) {
   } catch (error: any) {
     console.error('Login Error Details:', error?.message || error);
     return NextResponse.json(
-      { error: 'May naganap na problema sa server. Subukan ulit.' }, 
+      { error: 'A server problem occurred. Try again.' }, 
       { status: 500 }
     );
   }

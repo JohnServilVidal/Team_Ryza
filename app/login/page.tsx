@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,21 +26,19 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || 'May naganap na error sa pag-login.');
+        setError(data.error || 'An error occurred during login.');
         setLoading(false);
         return;
       }
 
-      // Suriin kung ito ang unang login (First Login - Set Password flow)
       if (data.isFirstLogin) {
-        // Maaari mo silang dalhin sa page kung saan magpapalit sila ng password
         router.push(`/set-password?email=${encodeURIComponent(email)}`);
       } else {
         alert('Login Successful!');
-        router.push('/dashboard'); // O sa iyong main dashboard page
+        router.push('/dashboard'); 
       }
     } catch (err) {
-      setError('Hindi makakonekta sa server. Subukan ulit mamaya.');
+      setError('Cannot connect to the server. Try again later.');
     } finally {
       setLoading(false);
     }
@@ -84,14 +83,34 @@ export default function LoginPage() {
               required
             />
           </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+          </div>
+
+          {/* ILAGAY DITO ANG LINK PARA SA FORGOT PASSWORD */}
+          <div className="flex justify-end mb-6">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
 
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition duration-200 font-semibold"
           >
-            {loading ? 'Nag-aauthenticate...' : 'Mag-login'}
+            {loading ? 'Authenticating...' : 'Log in'}
           </button>
+
         </form>
       </div>
     </div>

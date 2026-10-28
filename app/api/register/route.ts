@@ -8,7 +8,7 @@ export async function POST(request: Request) { //[cite: 18]
 
     if (!name || !email || !password) { //[cite: 18]
       return NextResponse.json( //[cite: 18]
-        { error: 'Kailangan ang pangalan, email, at password.' }, //[cite: 18]
+        { error: 'Name, email, and password are required.' }, //[cite: 18]
         { status: 400 } //[cite: 18]
       );
     }
@@ -20,7 +20,7 @@ export async function POST(request: Request) { //[cite: 18]
     const rows = existingUser?.rows || existingUser || [];
     if (Array.isArray(rows) && rows.length > 0) {
       return NextResponse.json( //[cite: 18]
-        { error: 'Ang email na ito ay nakarehistro na.' }, //[cite: 18]
+        { error: 'The email you entered is already registered.' }, //[cite: 18]
         { status: 400 } //[cite: 18]
       );
     }
