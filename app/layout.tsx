@@ -1,4 +1,4 @@
-import './globals.css'; // Idagdag ito sa pinakataas!
+import './globals.css'; 
 import React from 'react';
 
 export const metadata = {
