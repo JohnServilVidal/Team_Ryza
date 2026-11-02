@@ -1,56 +1,61 @@
-import { NextResponse } from 'next/server'; //[cite: 18]
-import { query } from '@/lib/db'; //[cite: 18]
+import { NextResponse } from 'next/server';
+import bcrypt from 'bcrypt';
+import { query } from '@/lib/db';
+import { MIN_PASSWORD } from '@/lib/tokens';
 
-export async function POST(request: Request) { //[cite: 18]
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export async function POST(request: Request) {
   try {
-    const body = await request.json(); //[cite: 18]
-    const { name, email, password, role } = body; //[cite: 18]
+    // A "role" sent by the browser is ignored on purpose. New users are always "user".
+    const { name, email, password } = await request.json();
 
-    if (!name || !email || !password) { //[cite: 18]
-      return NextResponse.json( //[cite: 18]
-        { error: 'Name, email, and password are required.' }, //[cite: 18]
-        { status: 400 } //[cite: 18]
+    const cleanName = String(name ?? '').trim();
+    const cleanEmail = String(email ?? '').trim().toLowerCase();
+    const pw = String(password ?? '');
+
+    if (!cleanName || !cleanEmail || !pw) {
+      return NextResponse.json({ error: 'Name, email, and password are required.' }, { status: 400 });
+    }
+    if (!EMAIL_RE.test(cleanEmail) || cleanEmail.length > 120) {
+      return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 });
+    }
+    if (pw.length < MIN_PASSWORD) {
+      return NextResponse.json(
+        { error: `Password must be at least ${MIN_PASSWORD} characters.` },
+        { status: 400 }
       );
     }
 
-    // 1. Suriin ang umiiral na user
-    const existingUser = await query('SELECT * FROM users WHERE email = $1', [email]); //[cite: 18]
-    
-    // Inaayos ang pagbasa ng rows kung 'existingUser.rows' man ito o direktang array 'existingUser'
-    const rows = existingUser?.rows || existingUser || [];
-    if (Array.isArray(rows) && rows.length > 0) {
-      return NextResponse.json( //[cite: 18]
-        { error: 'The email you entered is already registered.' }, //[cite: 18]
-        { status: 400 } //[cite: 18]
+    const parts = cleanName.split(/\s+/);
+    const firstName = (parts.shift() as string).slice(0, 50);
+    const lastName = parts.join(' ').slice(0, 50);
+
+    const hash = await bcrypt.hash(pw, 10);
+
+    try {
+      await query(
+        `insert into app_user
+           (first_name, last_name, email, password_hash, role_code, approval_status, stamp)
+         values ($1, $2, $3, $4, 'user', 'pending', 'ADD self-registered')`,
+        [firstName, lastName, cleanEmail, hash]
       );
+    } catch (err: any) {
+      if (err?.code === '23505') {
+        return NextResponse.json(
+          { error: 'The email you entered is already registered.' },
+          { status: 400 }
+        );
+      }
+      throw err;
     }
 
-    const userRole = role || 'User'; //[cite: 18]
-    
-    // 2. I-insert ang bagong user
-    const result = await query(
-      `INSERT INTO users (name, email, password, role, status, created_at)
-       VALUES ($1, $2, $3, $4, 'pending', NOW())
-       RETURNING id, name, email, role, status`, //[cite: 18]
-      [name, email, password, userRole] //[cite: 18]
-    );
-
-    const insertedRows = result?.rows || result || [];
-    const newUser = Array.isArray(insertedRows) ? insertedRows[0] : null;
-
-    return NextResponse.json( //[cite: 18]
-      {
-        message: 'Registration successful! Your account is currently pending.', //[cite: 18]
-        user: newUser,
-      },
-      { status: 201 } //[cite: 18]
+    return NextResponse.json(
+      { message: 'Registration successful! Your account is currently pending approval.' },
+      { status: 201 }
     );
   } catch (error: any) {
-    // Ipapakita ang kumpletong detalye ng error sa terminal
-    console.error('Registration Error Details:', error?.message || error); //[cite: 18]
-    return NextResponse.json( //[cite: 18]
-      { error: error?.message || 'There was a server problem. Try again.' }, //[cite: 18]
-      { status: 500 } //[cite: 18]
-    );
+    console.error('Registration error:', error?.message || error);
+    return NextResponse.json({ error: 'There was a server problem. Try again.' }, { status: 500 });
   }
 }

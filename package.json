@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "migrate": "node database/migrate.js",
-    "test:audit": "node database/test-audit.js"
+    "test:audit": "node database/test-audit.js",
+    "issue-link": "node database/issue-link.js"
   },
   "keywords": [],
   "author": "",

@@ -11,7 +11,7 @@ function SetPasswordForm() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const token = searchParams.get('token') || '';
 
   const handleSetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +28,7 @@ function SetPasswordForm() {
       const res = await fetch('/api/set-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, newPassword }),
+        body: JSON.stringify({ token, newPassword }),
       });
 
       const data = await res.json();
@@ -54,9 +54,9 @@ function SetPasswordForm() {
         <h2 className="text-2xl font-bold mb-2 text-center text-gray-800">
           Itakda ang Bagong Password
         </h2>
-        <p className="text-sm text-gray-500 mb-6 text-center">
-          Unang pag-login para sa: <span className="font-semibold">{email}</span>
-        </p>
+           <p className="text-sm text-gray-500 mb-6 text-center">
+     Choose a password to finish setting up your account.
+   </p>
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded text-sm">
