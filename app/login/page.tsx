@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '../../utils/supabase/client'
 import { useRouter } from 'next/navigation'
 import { Lock, Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { toast } from 'sonner';
 
 export default function LoginPage() {
   const [mode, setMode] = useState<'login' | 'signup' | 'forgot'>('login')
