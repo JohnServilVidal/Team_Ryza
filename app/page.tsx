@@ -104,7 +104,7 @@ export default function WelcomePage() {
 
       {/* Footer */}
       <footer className="max-w-7xl w-full mx-auto text-center text-xs text-slate-500 py-6 border-t border-slate-900 px-6 flex flex-col sm:flex-row justify-between items-center gap-4">
-        <p>© {new Date().getFullYear()} Hope ERP System. All rights reserved.</p>
+        <p>© 2026 Hope ERP System. All rights reserved.</p>
         <p className="text-emerald-500/80 font-medium">Engineered with Scrum Methodology by Team Ryza</p>
       </footer>
 
