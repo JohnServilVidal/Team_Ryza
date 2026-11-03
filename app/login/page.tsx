@@ -17,7 +17,7 @@ export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  // 1. Handle Login
+  // 1. Handle Login (Itinama na para dumiretso sa /dashboard)
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -31,14 +31,16 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message)
+      toast.error(error.message)
     } else {
-      router.push('/')
+      toast.success('Logged in successfully!')
+      router.push('/dashboard')
       router.refresh()
     }
     setLoading(false)
   }
 
-  // 2. Handle Sign Up (Bumabalik sa Login pagkatapos mag-sign up)
+  // 2. Handle Sign Up
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -52,10 +54,12 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message)
+      toast.error(error.message)
     } else {
       setMessage('Account created successfully! Please check your email to confirm, then sign in.')
+      toast.success('Account created successfully!')
       setPassword('')
-      setMode('login') // Automatic balik sa Login screen
+      setMode('login')
     }
     setLoading(false)
   }
@@ -77,8 +81,10 @@ export default function LoginPage() {
 
     if (error) {
       setError(error.message)
+      toast.error(error.message)
     } else {
       setMessage('Password reset link sent to your email!')
+      toast.success('Password reset link sent!')
       setMode('login')
     }
     setLoading(false)
