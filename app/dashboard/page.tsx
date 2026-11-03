@@ -2,186 +2,213 @@
 
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ShieldCheck, UserCheck, Package, ShoppingCart, BarChart3, Users, AlertTriangle, ArrowRight } from 'lucide-react';
+import { 
+  Package, 
+  Users, 
+  BarChart3, 
+  LogOut, 
+  ShieldCheck, 
+  UserCheck, 
+  ArrowRight, 
+  Sparkles,
+  Layers,
+  Clock,
+  Lock
+} from 'lucide-react';
 
 export default function DashboardPage() {
+  const [userEmail, setUserEmail] = useState<string>('');
   const [userRole, setUserRole] = useState<string>('staff');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter();
   const supabase = createClient();
 
   useEffect(() => {
-    async function getProfileRole() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // Kunin ang role mula sa profiles table na ginawa natin sa Supabase
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+    async function getUserData() {
+      const { data: { user }, error } = await supabase.auth.getUser();
+      
+      if (error || !user) {
+        router.push('/login');
+        return;
+      }
 
-        if (data && data.role) {
-          setUserRole(data.role);
-        }
+      setUserEmail(user.email || '');
+
+      // Fetch role from the profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile) {
+        setUserRole(profile.role);
       }
       setLoading(false);
     }
-    getProfileRole();
-  }, [supabase]);
+
+    getUserData();
+  }, [router, supabase]);
+
+  async function handleLogout() {
+    await supabase.auth.signOut();
+    router.push('/login');
+  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center font-medium">
-        Loading dashboard...
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 text-sm">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          Loading Hope ERP Dashboard...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-8 space-y-8">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 md:p-10 space-y-8">
       
-      {/* 🛡️ SUPER ADMIN VIEW */}
-      {userRole === 'admin' ? (
-        <div className="space-y-6">
-          {/* Header Banner */}
-          <div className="bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-900 border border-emerald-500/40 p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <span className="px-3 py-1 bg-emerald-500/25 text-emerald-400 text-xs font-bold rounded-full uppercase tracking-wider border border-emerald-500/40 flex items-center gap-1.5 w-fit">
-                <ShieldCheck className="w-3.5 h-3.5" /> Super Admin Control Panel
-              </span>
-              <h2 className="text-2xl md:text-3xl font-black text-white mt-3">
-                Executive Management Hub
-              </h2>
-              <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Mayroon kang kabuuang karapatan sa pamamahala ng sistema, user RBAC controls, at malalimang pagsusuri ng financial analytics.
-              </p>
-            </div>
-            <Link 
-              href="/" 
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700 transition"
-            >
-              ← Back to Welcome Page
-            </Link>
-          </div>
-
-          {/* Admin Executive Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Total Revenue</span>
-              <p className="text-2xl font-black text-white">₱124,850.00</p>
-              <span className="text-xs text-emerald-400 font-semibold">+14% from last month</span>
-            </div>
-            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Active Products</span>
-              <p className="text-2xl font-black text-white">142 Items</p>
-              <span className="text-xs text-slate-400">Categorized & Tracked</span>
-            </div>
-            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
-              <span className="text-xs text-slate-400 font-medium">System Users (RBAC)</span>
-              <p className="text-2xl font-black text-white">8 Users</p>
-              <span className="text-xs text-purple-400 font-semibold">Super Admin & Staff</span>
-            </div>
-            <div className="bg-slate-900/80 border border-slate-800 p-5 rounded-2xl space-y-2">
-              <span className="text-xs text-slate-400 font-medium">Low Stock Alerts</span>
-              <p className="text-2xl font-black text-amber-400">3 Items</p>
-              <span className="text-xs text-amber-500/80">Requires reorder soon</span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* 👤 REGULAR STAFF USER VIEW */
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-950/60 via-slate-900 to-slate-900 border border-blue-500/40 p-6 md:p-8 rounded-3xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <span className="px-3 py-1 bg-blue-500/25 text-blue-400 text-xs font-bold rounded-full uppercase tracking-wider border border-blue-500/40 flex items-center gap-1.5 w-fit">
-                <UserCheck className="w-3.5 h-3.5" /> Staff Portal
-              </span>
-              <h2 className="text-2xl md:text-3xl font-black text-white mt-3">
-                Point of Sale & Inventory Terminal
-              </h2>
-              <p className="text-sm text-slate-400 mt-1 max-w-2xl">
-                Maligayang pagdating! Gamitin ang mga module sa ibaba para sa mabilisang pagproseso ng mga benta at pag-monitor ng imbentaryo.
-              </p>
-            </div>
-            <Link 
-              href="/" 
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold rounded-xl border border-slate-700 transition"
-            >
-              ← Back to Welcome Page
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Core Management Modules Grid */}
-      <div className="space-y-4 pt-2">
-        <h3 className="text-lg font-bold text-white tracking-wide">Core Management Modules</h3>
+      {/* Top Banner & Header */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/40 border border-slate-800/80 p-8 rounded-3xl shadow-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Inventory Module */}
-          <div className="bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 p-6 rounded-2xl transition space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-emerald-950 border border-emerald-800/60 rounded-xl flex items-center justify-center text-emerald-400">
-                <Package className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-white text-lg">Inventory</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Manage product catalog, prices, quantities, and CRUD operations.
-              </p>
-            </div>
-            <Link href="/inventory" className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1.5 pt-2">
-              Open Module <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+        <div className="space-y-2 z-10">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full">
+            <Sparkles className="w-3.5 h-3.5" /> Hope ERP System Active
           </div>
+          <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-200">{userEmail.split('@')[0]}</span>!
+          </h1>
+          <p className="text-sm text-slate-400 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-slate-500" /> Your system role is set to <span className="uppercase font-bold text-emerald-400">{userRole}</span>.
+          </p>
+        </div>
 
-          {/* User Management (Admin Exclusive or Restricted) */}
-          <div className="bg-slate-900/90 border border-slate-800 hover:border-blue-500/50 p-6 rounded-2xl transition space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-blue-950 border border-blue-800/60 rounded-xl flex items-center justify-center text-blue-400">
-                <Users className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-white text-lg">User Management</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Control multi-tier RBAC access for Admin, Devs, Testers, & Staff.
-              </p>
+        <div className="flex items-center gap-4 z-10">
+          {userRole === 'super_admin' || userRole === 'admin' ? (
+            <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-2xl shadow-inner">
+              <ShieldCheck className="w-4 h-4" /> {userRole === 'super_admin' ? 'Super Admin' : 'Admin'} Access
             </div>
-            <Link href="/users" className="text-xs font-semibold text-blue-400 hover:text-blue-300 flex items-center gap-1.5 pt-2">
-              Open Module <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 border border-blue-500/30 text-blue-400 text-xs font-bold rounded-2xl shadow-inner">
+              <UserCheck className="w-4 h-4" /> User / Staff Access
+            </div>
+          )}
 
-          {/* Point of Sale Module */}
-          <div className="bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 p-6 rounded-2xl transition space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-10 h-10 bg-purple-950 border border-purple-800/60 rounded-xl flex items-center justify-center text-purple-400">
-                <ShoppingCart className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-white text-lg">Point of Sale</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Process sales transactions with live automatic inventory stock deduction.
-              </p>
-            </div>
-            <Link href="/pos" className="text-xs font-semibold text-purple-400 hover:text-purple-300 flex items-center gap-1.5 pt-2">
-              Open Module <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2.5 bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs font-bold rounded-2xl border border-rose-900/50 transition flex items-center gap-2 shadow-lg shadow-rose-950/40 cursor-pointer"
+          >
+            <LogOut className="w-4 h-4" /> Logout
+          </button>
+        </div>
+      </div>
 
-          {/* Reports & Analytics */}
-          <div className="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 p-6 rounded-2xl transition space-y-4 flex flex-col justify-between">
+      {/* Role-Based Navigation Cards Grid */}
+      <div className="space-y-4">
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <Layers className="w-5 h-5 text-emerald-400" /> Authorized Modules for Your Role
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          {/* Inventory Card (Accessible to Everyone) */}
+          <Link
+            href="/inventory"
+            className="group bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-emerald-500/50 p-6 rounded-3xl transition duration-300 space-y-4 shadow-xl flex flex-col justify-between"
+          >
             <div className="space-y-3">
-              <div className="w-10 h-10 bg-amber-950 border border-amber-800/60 rounded-xl flex items-center justify-center text-amber-400">
-                <BarChart3 className="w-5 h-5" />
+              <div className="w-12 h-12 rounded-2xl bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition duration-300">
+                <Package className="w-6 h-6" />
               </div>
-              <h4 className="font-bold text-white text-lg">Reports & Analytics</h4>
+              <h3 className="text-xl font-bold text-white group-hover:text-emerald-400 transition">Inventory Catalog</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                View revenue totals, total units sold statistics, and low stock reports.
+                View product listings, check stock quantities, and manage item pricing.
               </p>
             </div>
-            <Link href="/reports" className="text-xs font-semibold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 pt-2">
-              Open Module <ArrowRight className="w-3.5 h-3.5" />
+            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 pt-2">
+              <span>Open Inventory</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* User Management Card (Super Admin / Admin Only) */}
+          {(userRole === 'super_admin' || userRole === 'admin') ? (
+            <Link
+              href="/users"
+              className="group bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-blue-500/50 p-6 rounded-3xl transition duration-300 space-y-4 shadow-xl flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-blue-950/80 border border-blue-800/60 flex items-center justify-center text-blue-400 group-hover:scale-110 transition duration-300">
+                  <Users className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition">User Management</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Manage system users, review registered accounts, and modify access roles.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-blue-400 pt-2">
+                <span>Manage Users</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+              </div>
             </Link>
-          </div>
+          ) : (
+            <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-3xl space-y-4 opacity-60 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-400">User Management</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Restricted to administrators only. Contact your system admin for access changes.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-2">
+                <span>Access Denied</span>
+              </div>
+            </div>
+          )}
+
+          {/* Reports Card (Admin & Super Admin Only, or tailored per role) */}
+          {(userRole === 'super_admin' || userRole === 'admin') ? (
+            <Link
+              href="/reports"
+              className="group bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-amber-500/50 p-6 rounded-3xl transition duration-300 space-y-4 shadow-xl flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-amber-950/80 border border-amber-800/60 flex items-center justify-center text-amber-400 group-hover:scale-110 transition duration-300">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-white group-hover:text-amber-400 transition">Reports & Analytics</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Analyze inventory asset evaluations, financial metrics, and low-stock alerts.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-400 pt-2">
+                <span>View Reports</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+              </div>
+            </Link>
+          ) : (
+            <div className="bg-slate-900/50 border border-slate-800/50 p-6 rounded-3xl space-y-4 opacity-60 flex flex-col justify-between">
+              <div className="space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-400">Reports & Analytics</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Restricted to administrative personnel.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-2">
+                <span>Access Denied</span>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
 
