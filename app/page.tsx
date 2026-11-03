@@ -1,8 +1,23 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
 
 export default function WelcomePage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const supabase = createClient();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setIsLoggedIn(true);
+      }
+    };
+    checkUser();
+  }, [supabase]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6">
       {/* Header / Navbar */}
@@ -11,18 +26,29 @@ export default function WelcomePage() {
           <span className="text-2xl font-black text-emerald-400 tracking-wider">HOPE ERP</span>
         </div>
         <div className="space-x-4">
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm text-slate-300 hover:text-white transition"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/login"
-            className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition"
-          >
-            Get Started
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition"
+            >
+              Go to Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm text-slate-300 hover:text-white transition"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
       </header>
 
@@ -39,12 +65,21 @@ export default function WelcomePage() {
         </p>
 
         <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
-          <Link
-            href="/login"
-            className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition text-center"
-          >
-            Access Dashboard / Log In
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition text-center"
+            >
+              Go to Main Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition text-center"
+            >
+              Access System / Log In
+            </Link>
+          )}
         </div>
 
         {/* System Features Overview */}
@@ -74,4 +109,4 @@ export default function WelcomePage() {
       </footer>
     </div>
   );
-}
+} 
