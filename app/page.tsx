@@ -1,70 +1,77 @@
-import { createClient } from '../utils/supabase/client'
-import { redirect } from 'next/navigation';
+'use client';
+
 import Link from 'next/link';
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return redirect('/login');
-  }
-
+export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      {/* Top Navbar */}
-      <nav className="border-b border-slate-800 bg-slate-900/50 backdrop-blur px-8 py-4 flex justify-between items-center">
-        <h1 className="text-xl font-black tracking-wider text-blue-500">HOPE ERP</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-slate-400">{user.email}</span>
-          <form action="/auth/signout" method="post">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-red-600 hover:bg-red-500 text-sm font-semibold rounded-lg transition"
-            >
-              Sign Out
-            </button>
-          </form>
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col justify-between p-6">
+      {/* Header / Navbar */}
+      <header className="max-w-6xl w-full mx-auto flex justify-between items-center py-4 border-b border-slate-800">
+        <div className="flex items-center space-x-2">
+          <span className="text-2xl font-black text-emerald-400 tracking-wider">HOPE ERP</span>
         </div>
-      </nav>
+        <div className="space-x-4">
+          <Link
+            href="/login"
+            className="px-4 py-2 text-sm text-slate-300 hover:text-white transition"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/login"
+            className="px-4 py-2 text-sm bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-lg transition"
+          >
+            Get Started
+          </Link>
+        </div>
+      </header>
 
-      {/* Main Content Dashboard */}
-      <main className="p-8 max-w-6xl mx-auto">
-        <div className="rounded-xl bg-slate-900 p-8 border border-slate-800 shadow-2xl space-y-4">
-          <h2 className="text-3xl font-extrabold text-white">
-            Welcome to Hope ERP System! 🚀
-          </h2>
-          <p className="text-slate-300 leading-relaxed">
-            Naka-login ka na nang matagumpay gamit ang account na: <strong className="text-blue-400">{user?.email}</strong>
-          </p>
+      {/* Hero Section */}
+      <main className="max-w-4xl mx-auto text-center my-auto space-y-6 py-12">
+        <span className="px-3 py-1 text-xs font-semibold uppercase tracking-widest text-emerald-400 bg-emerald-950/60 border border-emerald-800 rounded-full">
+          All-in-One Business Management System
+        </span>
+        <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight leading-tight">
+          Streamline Your Inventory, Sales & Analytics with <span className="text-emerald-400">Hope ERP</span>
+        </h1>
+        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto">
+          A modern enterprise resource planning system engineered for real-time stock tracking, RBAC security, seamless sales recording, and live revenue reporting.
+        </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4">
-            {/* Inventory Card Link */}
-            <Link 
-              href="/inventory"
-              className="p-4 rounded-lg bg-slate-950 border border-slate-800 hover:border-blue-500/50 transition cursor-pointer block group"
-            >
-              <h3 className="font-bold text-lg text-blue-400 group-hover:text-blue-300">Inventory</h3>
-              <p className="text-sm text-slate-400 mt-1">Manage products & stocks</p>
-            </Link>
+        <div className="flex flex-col sm:flex-row justify-center gap-4 pt-4">
+          <Link
+            href="/login"
+            className="px-8 py-3 bg-emerald-600 hover:bg-emerald-500 font-bold rounded-xl shadow-lg transition text-center"
+          >
+            Access Dashboard / Log In
+          </Link>
+        </div>
 
-            {/* Sales Card */}
-            <div className="p-4 rounded-lg bg-slate-950 border border-slate-800">
-              <h3 className="font-bold text-lg text-emerald-400">Sales</h3>
-              <p className="text-sm text-slate-400 mt-1">Track orders & transactions</p>
-            </div>
-
-            {/* HR & Users Card */}
-            <div className="p-4 rounded-lg bg-slate-950 border border-slate-800">
-              <h3 className="font-bold text-lg text-purple-400">HR & Users</h3>
-              <p className="text-sm text-slate-400 mt-1">Manage staff & roles</p>
-            </div>
+        {/* System Features Overview */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-12 text-left">
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2">
+            <h3 className="text-emerald-400 font-semibold">Inventory Management</h3>
+            <p className="text-xs text-slate-400">Full CRUD operations with live stock updates and product status.</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2">
+            <h3 className="text-emerald-400 font-semibold">Role-Based RBAC</h3>
+            <p className="text-xs text-slate-400">Multi-tier role controls for Super Admin, Admin, Devs, Testers, & Staff.</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2">
+            <h3 className="text-emerald-400 font-semibold">POS & Sales</h3>
+            <p className="text-xs text-slate-400">Real-time stock deduction and immediate transaction logging.</p>
+          </div>
+          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl space-y-2">
+            <h3 className="text-emerald-400 font-semibold">Reports & Analytics</h3>
+            <p className="text-xs text-slate-400">Revenue tracking, items sold metrics, and low stock warnings.</p>
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="text-center text-xs text-slate-500 py-4 border-t border-slate-900">
+        © {new Date().getFullYear()} Hope ERP. Built by Scrum Team Ryza. All rights reserved.
+      </footer>
     </div>
   );
 }
