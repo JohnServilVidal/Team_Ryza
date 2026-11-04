@@ -15,7 +15,8 @@ import {
   Sparkles,
   Layers,
   Clock,
-  Lock
+  Lock,
+  ShoppingCart
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -36,7 +37,6 @@ export default function DashboardPage() {
 
       setUserEmail(user.email || '');
 
-      // Fetch role from the profiles table
       const { data: profile } = await supabase
         .from('profiles')
         .select('role')
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           <Layers className="w-5 h-5 text-emerald-400" /> Authorized Modules for Your Role
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           
           {/* Inventory Card (Accessible to Everyone) */}
           <Link
@@ -131,6 +131,26 @@ export default function DashboardPage() {
             </div>
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 pt-2">
               <span>Open Inventory</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
+            </div>
+          </Link>
+
+          {/* POS Terminal Card (Accessible to Everyone) */}
+          <Link
+            href="/pos"
+            className="group bg-slate-900/90 hover:bg-slate-800/90 border border-slate-800 hover:border-teal-500/50 p-6 rounded-3xl transition duration-300 space-y-4 shadow-xl flex flex-col justify-between"
+          >
+            <div className="space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-teal-950/80 border border-teal-800/60 flex items-center justify-center text-teal-400 group-hover:scale-110 transition duration-300">
+                <ShoppingCart className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold text-white group-hover:text-teal-400 transition">POS Storefront</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Process customer purchases and update stock levels in real time.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-bold text-teal-400 pt-2">
+              <span>Open POS Terminal</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition" />
             </div>
           </Link>
@@ -163,7 +183,7 @@ export default function DashboardPage() {
                 </div>
                 <h3 className="text-xl font-bold text-slate-400">User Management</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Restricted to administrators only. Contact your system admin for access changes.
+                  Restricted to administrators only.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-xs font-bold text-slate-500 pt-2">
@@ -172,7 +192,7 @@ export default function DashboardPage() {
             </div>
           )}
 
-          {/* Reports Card (Admin & Super Admin Only, or tailored per role) */}
+          {/* Reports Card (Admin & Super Admin Only) */}
           {(userRole === 'super_admin' || userRole === 'admin') ? (
             <Link
               href="/reports"
