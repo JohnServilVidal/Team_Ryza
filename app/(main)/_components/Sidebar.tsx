@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Package, Users, BarChart3, ShieldAlert } from 'lucide-react'
+import { LayoutDashboard, Package, Users, BarChart3, ShieldAlert, ShoppingCart } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 
 const links = [
   { href: '/dashboard', label: 'Overview', icon: LayoutDashboard, roles: ['super_admin', 'admin', 'staff'] },
   { href: '/inventory', label: 'Inventory Management', icon: Package, roles: ['super_admin', 'admin', 'staff'] },
+  { href: '/sales', label: 'Sales & POS', icon: ShoppingCart, roles: ['super_admin', 'admin', 'staff'] }, // <-- Kailangan may kasamang icon dito!
   { href: '/users', label: 'User Management', icon: Users, roles: ['super_admin', 'admin'] },
   { href: '/reports', label: 'Reports & Analytics', icon: BarChart3, roles: ['super_admin', 'admin'] },
   { href: '/audit-logs', label: 'Audit Logs', icon: ShieldAlert, roles: ['super_admin'] }, 

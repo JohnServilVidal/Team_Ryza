@@ -3,21 +3,26 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Link from 'next/link';
-import { toast } from 'sonner';
 
 interface Product {
   id: string;
   name: string;
+  sku: string;
   price: number;
   stock: number;
 }
 
 interface Sale {
-  id: string;
-  product_name: string;
-  quantity: number;
-  total_price: number;
-  created_at: string;
+  transno: string;
+  salesdate: string;
+  custno?: string;
+  empno?: string;
+  is_deleted?: boolean;
+  stamp?: string;
+  salesdetail?: {
+    prodcode: string;
+    quantity: number;
+  }[];
 }
 
 export default function SalesPage() {
@@ -26,13 +31,39 @@ export default function SalesPage() {
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState<string>('');
 
   const supabase = createClient();
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: prodData } = await supabase.from('products').select('*').gt('stock', 0);
-    const { data: salesData } = await supabase.from('sales').select('*').order('created_at', { ascending: false });
+
+    // 1. Kunin ang role ng current logged-in user para sa RBAC
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      if (profile) setUserRole(profile.role);
+    }
+
+    // 2. Kunin ang LAHAT ng produkto para magamit sa product name matching sa history
+    const { data: prodData } = await supabase.from('products').select('*');
+
+    // 3. Kunin ang active sales kasama ang salesdetail, naka-sort sa pinakabago gamit ang stamp
+    const { data: salesData } = await supabase
+      .from('sales')
+      .select(`
+        *,
+        salesdetail (
+          prodcode,
+          quantity
+        )
+      `)
+      .eq('is_deleted', false)
+      .order('stamp', { ascending: false });
 
     setProducts(prodData || []);
     setSales(salesData || []);
@@ -40,7 +71,10 @@ export default function SalesPage() {
   };
 
   useEffect(() => {
-    fetchData();
+    const loadInitialData = async () => {
+      await fetchData();
+    };
+    loadInitialData();
   }, []);
 
   const handleProcessSale = async (e: React.FormEvent) => {
@@ -49,21 +83,41 @@ export default function SalesPage() {
     if (!product) return alert('Pumili ng produkto!');
     if (quantity > product.stock) return alert('Kulang ang stock!');
 
-    const totalPrice = product.price * quantity;
+    const customTransno = `TR${Math.floor(100000 + Math.random() * 900000)}`;
+    const today = new Date().toISOString().split('T')[0];
+    const timestamp = new Date().toLocaleString();
 
-    // 1. Record Sale
+    // 1. I-save sa sales table (Header)
     const { error: saleError } = await supabase.from('sales').insert([
       {
-        product_id: product.id,
-        product_name: product.name,
-        quantity: quantity,
-        total_price: totalPrice,
+        transno: customTransno,
+        salesdate: today,
+        custno: 'C0001',
+        empno: '00005',
+        is_deleted: false,
+        stamp: `ADD system ${timestamp}`,
       },
     ]);
 
-    if (saleError) return alert('Error saving sale: ' + saleError.message);
+    if (saleError) return alert('Error saving sale header: ' + saleError.message);
 
-    // 2. Deduct Stock
+    // 2. Kuhanin ang unang 6 na karakter ng SKU para sumunod sa varying(6) limit ng salesdetail.prodcode
+    const productCode = String(product.sku || '').replace('-', '');
+
+    // 3. I-save sa salesdetail table (Line Item)
+    const { error: detailError } = await supabase.from('salesdetail').insert([
+      {
+        transno: customTransno,
+        prodcode: productCode,
+        quantity: quantity,
+        is_deleted: false,
+        stamp: `ADD system ${timestamp}`,
+      },
+    ]);
+
+    if (detailError) return alert('Error saving sales detail: ' + detailError.message);
+
+    // 4. Bawasan ang stock sa products table
     const { error: stockError } = await supabase
       .from('products')
       .update({ stock: product.stock - quantity })
@@ -76,6 +130,27 @@ export default function SalesPage() {
     setQuantity(1);
     fetchData();
   };
+
+  // Soft Delete Function (Admin & Super Admin lang)
+  const handleSoftDelete = async (transno: string) => {
+    const timestamp = new Date().toLocaleString();
+    const { error } = await supabase
+      .from('sales')
+      .update({ 
+        is_deleted: true, 
+        stamp: `DELETE system ${timestamp}` 
+      })
+      .eq('transno', transno);
+
+    if (error) {
+      alert('Error deleting sale: ' + error.message);
+    } else {
+      fetchData();
+    }
+  };
+
+  // I-filter ang mga may stock lang para sa dropdown ng POS form
+  const availableProducts = products.filter((p) => p.stock > 0);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-8">
@@ -100,7 +175,7 @@ export default function SalesPage() {
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white mt-1"
               >
                 <option value="">-- Choose Item --</option>
-                {products.map((p) => (
+                {availableProducts.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} (₱{p.price.toFixed(2)} | Stock: {p.stock})
                   </option>
@@ -113,7 +188,7 @@ export default function SalesPage() {
                 type="number"
                 min="1"
                 value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuantity(parseInt(e.target.value) || 1)}
                 className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2.5 text-sm text-white mt-1"
               />
             </div>
@@ -134,26 +209,66 @@ export default function SalesPage() {
           <table className="w-full text-left text-sm text-slate-300">
             <thead className="bg-slate-800/50 text-slate-400 uppercase text-xs">
               <tr>
+                <th className="p-4">Trans No</th>
                 <th className="p-4">Product Name</th>
                 <th className="p-4">Qty</th>
-                <th className="p-4">Total Amount</th>
-                <th className="p-4">Date</th>
+                <th className="p-4">Total</th>
+                <th className="p-4">Sales Date</th>
+                <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {loading ? (
-                <tr><td colSpan={4} className="p-4 text-center">Loading transactions...</td></tr>
+                <tr><td colSpan={6} className="p-4 text-center">Loading transactions...</td></tr>
               ) : sales.length === 0 ? (
-                <tr><td colSpan={4} className="p-4 text-center text-slate-500">No sales recorded yet.</td></tr>
+                <tr><td colSpan={6} className="p-4 text-center text-slate-500">No sales recorded yet.</td></tr>
               ) : (
-                sales.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-800/40">
-                    <td className="p-4 font-medium text-white">{s.product_name}</td>
-                    <td className="p-4">{s.quantity}</td>
-                    <td className="p-4 text-emerald-400 font-semibold">₱{Number(s.total_price).toFixed(2)}</td>
-                    <td className="p-4 text-slate-400">{new Date(s.created_at).toLocaleString()}</td>
-                  </tr>
-                ))
+                sales.map((s) => {
+                  const detail = s.salesdetail && s.salesdetail.length > 0 ? s.salesdetail[0] : null;
+                  
+                  // Hanapin ang product name gamit ang sku o prodcode
+                  const matchedProduct = detail
+                    ? products.find(
+                        (p) =>
+                          p.sku === detail.prodcode ||
+                          String(p.sku || '').replace('-', '') === detail.prodcode ||
+                          p.id === detail.prodcode ||
+                          String(p.sku || '').substring(0, 6) === detail.prodcode
+                          
+                      )
+                    : null;
+
+                  const productName = matchedProduct
+                    ? matchedProduct.name
+                    : detail
+                    ? detail.prodcode
+                    : '—';
+
+                  const totalAmount =
+                    matchedProduct && detail
+                      ? `₱${(matchedProduct.price * detail.quantity).toFixed(2)}`
+                      : '—';
+
+                  return (
+                    <tr key={s.transno} className="hover:bg-slate-800/40">
+                      <td className="p-4 font-medium text-white">{s.transno}</td>
+                      <td className="p-4 text-emerald-400 font-medium">{productName}</td>
+                      <td className="p-4">{detail ? `${detail.quantity}x` : '—'}</td>
+                      <td className="p-4 text-slate-200">{totalAmount}</td>
+                      <td className="p-4">{s.salesdate}</td>
+                      <td className="p-4 text-center">
+                        {userRole !== 'staff' && userRole !== '' && (
+                          <button
+                            onClick={() => handleSoftDelete(s.transno)}
+                            className="bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1 rounded text-xs transition"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
