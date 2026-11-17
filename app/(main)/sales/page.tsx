@@ -23,11 +23,18 @@ interface Sale {
     prodcode: string;
     quantity: number;
   }[];
+  customer?: {
+    custName: string;
+  };
+  employee?: {
+    lastName: string;
+    firstName: string;
+  };
 }
 
 export default function SalesPage() {
   const [products, setProducts] = useState<Product[]>([]);
-  const [sales, setSales] = useState<Sale[]>([]);
+ const [sales, setSales] = useState<Sale[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -51,22 +58,32 @@ export default function SalesPage() {
 
     // 2. Kunin ang LAHAT ng produkto para magamit sa product name matching sa history
     const { data: prodData } = await supabase.from('products').select('*');
+    setProducts(prodData || []);
 
-    // 3. Kunin ang active sales kasama ang salesdetail, naka-sort sa pinakabago gamit ang stamp
-    const { data: salesData } = await supabase
+    // 3. Kunin ang active sales kasama ang customer, employee, at salesdetail
+    const { data: salesData, error } = await supabase
       .from('sales')
       .select(`
-        *,
+        transno,
+        salesdate,
+        custno,
+        empno,
+        is_deleted,
+        stamp,
         salesdetail (
-          prodcode,
-          quantity
-        )
+          quantity,
+          prodcode
+      )
       `)
       .eq('is_deleted', false)
       .order('stamp', { ascending: false });
 
-    setProducts(prodData || []);
-    setSales(salesData || []);
+    if (error) {
+      console.error('Error fetching sales:', error.message);
+    } else {
+      setSales((salesData as unknown as Sale[]) || []);
+    }
+
     setLoading(false);
   };
 
@@ -210,21 +227,24 @@ export default function SalesPage() {
             <thead className="bg-slate-800/50 text-slate-400 uppercase text-xs">
               <tr>
                 <th className="p-4">Trans No</th>
+                <th className="p-4">Customer</th>
                 <th className="p-4">Product Name</th>
                 <th className="p-4">Qty</th>
                 <th className="p-4">Total</th>
+                <th className="p-4">Balance</th>
                 <th className="p-4">Sales Date</th>
                 <th className="p-4 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {loading ? (
-                <tr><td colSpan={6} className="p-4 text-center">Loading transactions...</td></tr>
+                <tr><td colSpan={7} className="p-4 text-center">Loading transactions...</td></tr>
               ) : sales.length === 0 ? (
-                <tr><td colSpan={6} className="p-4 text-center text-slate-500">No sales recorded yet.</td></tr>
+                <tr><td colSpan={7} className="p-4 text-center text-slate-500">No sales recorded yet.</td></tr>
               ) : (
                 sales.map((s) => {
                   const detail = s.salesdetail && s.salesdetail.length > 0 ? s.salesdetail[0] : null;
+
                   
                   // Hanapin ang product name gamit ang sku o prodcode
                   const matchedProduct = detail
@@ -234,7 +254,6 @@ export default function SalesPage() {
                           String(p.sku || '').replace('-', '') === detail.prodcode ||
                           p.id === detail.prodcode ||
                           String(p.sku || '').substring(0, 6) === detail.prodcode
-                          
                       )
                     : null;
 
@@ -244,17 +263,23 @@ export default function SalesPage() {
                     ? detail.prodcode
                     : '—';
 
-                  const totalAmount =
-                    matchedProduct && detail
-                      ? `₱${(matchedProduct.price * detail.quantity).toFixed(2)}`
-                      : '—';
+                    const numericTotal = matchedProduct && detail ? matchedProduct.price * detail.quantity : 0;
+                    const totalAmount = numericTotal > 0 ? `₱${numericTotal.toFixed(2)}` : '—';
+
+                    const payments = 0; // Pwede mong palitan kung may payment table ka na
+                    const balanceAmount = numericTotal - payments;
+                    const balanceDisplay = numericTotal > 0 ? `₱${balanceAmount.toFixed(2)}` : '—';
+
+                    const customerName = s.custno || '—';
 
                   return (
                     <tr key={s.transno} className="hover:bg-slate-800/40">
                       <td className="p-4 font-medium text-white">{s.transno}</td>
+                      <td className="p-4 text-slate-300">{customerName}</td>
                       <td className="p-4 text-emerald-400 font-medium">{productName}</td>
                       <td className="p-4">{detail ? `${detail.quantity}x` : '—'}</td>
                       <td className="p-4 text-slate-200">{totalAmount}</td>
+                      <td className="p-4 text-amber-400 font-semibold">{balanceDisplay}</td> {/* <-- Ang Balance column */}
                       <td className="p-4">{s.salesdate}</td>
                       <td className="p-4 text-center">
                         {userRole !== 'staff' && userRole !== '' && (
