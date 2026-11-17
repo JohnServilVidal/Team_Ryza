@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client'
 const restricted: Record<string, string[]> = {
   '/users': ['super_admin', 'admin'],
   '/reports': ['super_admin', 'admin'],
+  '/audit-logs': ['super_admin'],
 }
 
 export default function RouteGuard() {
